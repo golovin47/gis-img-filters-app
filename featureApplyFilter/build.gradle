@@ -1,0 +1,62 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: "kotlin-kapt"
+
+android {
+    compileSdkVersion 28
+
+
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    dataBinding {
+        enabled = true
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation project(':utils')
+
+    implementation Deps.kotlinStdlib
+    implementation Deps.androidKtx
+    implementation Deps.appCompat
+    implementation Deps.constraintLayout
+
+    implementation Deps.rxJava
+    implementation Deps.rxKotlin
+    implementation Deps.rxRelay
+    implementation Deps.rxAndroid
+    implementation Deps.rxBindingKotlin
+    implementation Deps.rxBindingDesignKotlin
+    implementation Deps.rxBindingAppCompatV7Kotlin
+
+    implementation Deps.lifecycle
+
+    implementation Deps.navigationFragment
+    implementation Deps.navigationUI
+
+    implementation Deps.koinCore
+    implementation Deps.koinAndroid
+    implementation Deps.koinCoreScope
+    implementation Deps.koinAndroidViewModel
+
+    testImplementation Deps.jUnit
+    androidTestImplementation Deps.androidTestRunner
+    androidTestImplementation Deps.espresso
+}

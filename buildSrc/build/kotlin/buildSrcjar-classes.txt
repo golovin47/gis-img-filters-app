@@ -1,0 +1,1 @@
+/Users/ivan/StudioProjects/ImgFiltersApp/buildSrc/build/classes/kotlin/main/Deps.class:/Users/ivan/StudioProjects/ImgFiltersApp/buildSrc/build/classes/kotlin/main/General.class:/Users/ivan/StudioProjects/ImgFiltersApp/buildSrc/build/classes/kotlin/main/Version.class

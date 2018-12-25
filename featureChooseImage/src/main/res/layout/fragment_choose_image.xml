@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+  <data>
+
+    <variable
+        name="loading"
+        type="Boolean" />
+
+  </data>
+
+  <androidx.constraintlayout.motion.widget.MotionLayout
+      android:id="@+id/chooseImageRoot"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      app:layoutDescription="@xml/choose_image_motion_scene">
+
+    <Button
+        android:id="@+id/btnCamera"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:enabled="@{!loading}"
+        android:padding="8dp"
+        android:text="@string/take_a_photo"
+        android:textAllCaps="false" />
+
+    <Button
+        android:id="@+id/btnGallery"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:enabled="@{!loading}"
+        android:padding="8dp"
+        android:text="@string/choose_from_gallery"
+        android:textAllCaps="false" />
+
+    <ProgressBar
+        android:id="@+id/pbLoading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+  </androidx.constraintlayout.motion.widget.MotionLayout>
+
+</layout>
