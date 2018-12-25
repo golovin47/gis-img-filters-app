@@ -19,7 +19,7 @@
 
   <fragment
       android:id="@+id/applyFilterFragment"
-      android:name="com.gis.featureapplyfilter.presentation.ui.ApplyFilterFragment"
+      android:name="com.gis.featureapplyfilter.presentation.ui.applyfilterscreen.ApplyFilterFragment"
       android:label="ApplyFilterFragment"
       tools:layout="@layout/fragment_apply_filter" />
 

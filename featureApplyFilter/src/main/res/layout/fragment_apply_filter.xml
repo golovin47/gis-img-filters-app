@@ -6,13 +6,13 @@
   <androidx.constraintlayout.motion.widget.MotionLayout
       android:id="@+id/applyFilterRoot"
       android:layout_width="match_parent"
-      android:layout_height="match_parent">
+      android:layout_height="match_parent"
+      app:layoutDescription="@xml/apply_filter_motion_scene">
 
-    <ImageView
-        android:id="@+id/ivImg"
+    <android.opengl.GLSurfaceView
+        android:id="@+id/glsvImg"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:scaleType="centerCrop"
         app:layout_constraintBottom_toTopOf="@id/rvFilters"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -25,7 +25,12 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/ivImg" />
+        app:layout_constraintTop_toBottomOf="@id/glsvImg" />
+
+    <ProgressBar
+        android:id="@+id/pbLoading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
 
   </androidx.constraintlayout.motion.widget.MotionLayout>
 

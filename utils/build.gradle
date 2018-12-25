@@ -40,6 +40,8 @@ dependencies {
     implementation Deps.glide
     kapt Deps.glideCompiler
 
+    implementation Deps.photoFilter
+
     implementation Deps.koinCore
     implementation Deps.koinAndroid
     implementation Deps.koinCoreScope
