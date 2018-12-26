@@ -14,6 +14,12 @@ class MainActivity : AppCompatActivity() {
   private lateinit var binding: ActivityMainBinding
   private var navigator: AppNavigator = get()
 
+  companion object {
+    init {
+      System.loadLibrary("NativeImageProcessor")
+    }
+  }
+
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 

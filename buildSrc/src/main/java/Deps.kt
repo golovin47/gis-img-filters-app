@@ -80,8 +80,8 @@ object Version {
     const val fabricPlugin = "1.+"
     const val simpleAuth = "2.1.3"  //https://github.com/jaychang0917/SimpleAuth
 
-    //photo filter
-    const val photoFilter = "2.0.0" //https://github.com/mukeshsolanki/photofilter
+    //android photo filter
+    const val photoFilter = "1.0.7" //https://github.com/emonm/AndroidPhotoFilters
 
     // firebase
     const val firebaseCore = "16.0.1"
@@ -234,8 +234,8 @@ object Deps {
     const val googleMaps = "com.google.android.gms:play-services-maps:${Version.googleMaps}"
     const val googleLocation = "com.google.android.gms:play-services-location:${Version.googleLocation}"
 
-    //Photo Filter
-    const val photoFilter = "com.github.mukeshsolanki:photofilter:${Version.photoFilter}"
+    //Android Photo Filters
+    const val photoFilter = "info.androidhive:imagefilters:${Version.photoFilter}"
 
     // Tests
     const val jUnit = "junit:junit:${Version.jUnit}"

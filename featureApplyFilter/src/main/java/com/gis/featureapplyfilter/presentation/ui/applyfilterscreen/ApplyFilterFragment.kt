@@ -1,7 +1,6 @@
 package com.gis.featureapplyfilter.presentation.ui.applyfilterscreen
 
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -9,31 +8,35 @@ import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.gis.featureapplyfilter.R
 import com.gis.featureapplyfilter.databinding.FragmentApplyFilterBinding
 import com.gis.featureapplyfilter.presentation.ui.applyfilterscreen.ApplyFilterIntent.ChooseFilter
+import com.gis.featureapplyfilter.presentation.ui.applyfilterscreen.ApplyFilterIntent.InitBitmapAndGetThumbnails
 import com.gis.utils.BaseView
-import com.gis.utils.domain.PhotoFilter
-import com.gis.utils.domain.PhotoFilterCallback
+import com.gis.utils.domain.ImageLoader
 import io.reactivex.Observable
 import io.reactivex.disposables.Disposable
 import io.reactivex.subjects.PublishSubject
-import org.koin.android.ext.android.get
 import org.koin.android.ext.android.inject
-import org.koin.core.parameter.parametersOf
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class ApplyFilterFragment : Fragment(), BaseView<ApplyFilterState> {
 
+  private val imagePath: String by lazy(LazyThreadSafetyMode.NONE) {
+    arguments!!.getString("imagePath")
+  }
+
   private lateinit var currentState: ApplyFilterState
-  private val eventsPublisher = PublishSubject.create<ApplyFilterIntent>()
+  private val filterClicksPublisher = PublishSubject.create<String>()
   private var viewSubscription: Disposable? = null
 
-  private var photoFilter: PhotoFilter? = null
+  private val imageLoader: ImageLoader by inject()
   private var binding: FragmentApplyFilterBinding? = null
 
-  private val vmApplyFilter: ApplyFilterViewModel by inject()
+  private val vmApplyFilter: ApplyFilterViewModel by viewModel()
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -43,26 +46,13 @@ class ApplyFilterFragment : Fragment(), BaseView<ApplyFilterState> {
   override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
     initBinding(inflater, container)
     initRecyclerView()
-    initPhotoFilter()
     initIntents()
-    showPhoto(bitmapFromFilePath(arguments!!.getString("imagePath")!!))
 
     return binding!!.root
   }
 
-  override fun onResume() {
-    super.onResume()
-    binding!!.glsvImg.onResume()
-  }
-
-  override fun onPause() {
-    super.onPause()
-    binding!!.glsvImg.onPause()
-  }
-
   override fun onDestroyView() {
     binding = null
-    photoFilter = null
     viewSubscription?.dispose()
     super.onDestroyView()
   }
@@ -74,41 +64,21 @@ class ApplyFilterFragment : Fragment(), BaseView<ApplyFilterState> {
   private fun initRecyclerView() {
     binding!!.rvFilters.apply {
       layoutManager = LinearLayoutManager(context, RecyclerView.HORIZONTAL, false)
-      adapter = FiltersAdapter(eventsPublisher)
-    }
-  }
-
-  private fun initPhotoFilter() {
-    photoFilter = get {
-      parametersOf(binding!!.glsvImg, object : PhotoFilterCallback {
-        override fun filterApplied(bitmap: Bitmap) {
-          eventsPublisher.onNext(ApplyFilterIntent.FilterApplied(bitmap))
-        }
-      })
+      adapter = FiltersAdapter(filterClicksPublisher, imageLoader)
+      addItemDecoration(DividerItemDecoration(context!!, RecyclerView.HORIZONTAL))
     }
   }
 
   private fun showPhoto(bitmap: Bitmap) {
-    photoFilter!!.applyFilter(bitmap, "")
+    imageLoader.loadBitmap(binding!!.ivImg, bitmap)
   }
-
-  private fun bitmapFromFilePath(path: String): Bitmap =
-    BitmapFactory.decodeFile(path, BitmapFactory.Options())
 
   override fun initIntents() {
     viewSubscription = Observable.merge(listOf(
-      eventsPublisher
-        .ofType(ChooseFilter::class.java)
-        .doOnNext { event ->
-          if (event.name == "None")
-            showPhoto(bitmapFromFilePath(arguments!!.getString("imagePath")!!))
-          else
-            photoFilter!!.applyFilter(currentState.currentBitmap!!, event.name)
+      Observable.just(InitBitmapAndGetThumbnails(imagePath)),
 
-        },
-
-      eventsPublisher
-        .ofType(ApplyFilterIntent.FilterApplied::class.java)
+      filterClicksPublisher
+        .map { name -> ChooseFilter(name, currentState.currentBitmap!!) }
     ))
       .subscribe(vmApplyFilter.viewIntentsConsumer())
   }
@@ -120,8 +90,9 @@ class ApplyFilterFragment : Fragment(), BaseView<ApplyFilterState> {
   override fun render(state: ApplyFilterState) {
     currentState = state
 
-    if (state.loading) binding!!.applyFilterRoot?.transitionToEnd()
-    else binding!!.applyFilterRoot?.transitionToStart()
+    binding!!.loading = state.loading
+
+    if (state.currentBitmap != null) showPhoto(state.currentBitmap)
 
     (binding!!.rvFilters.adapter as FiltersAdapter).submitList(state.filters)
   }

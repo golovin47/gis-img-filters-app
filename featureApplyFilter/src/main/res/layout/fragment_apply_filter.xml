@@ -1,37 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<layout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
 
-  <androidx.constraintlayout.motion.widget.MotionLayout
+  <data>
+
+    <variable
+        name="loading"
+        type="Boolean" />
+
+    <import type="android.view.View" />
+
+  </data>
+
+  <FrameLayout
       android:id="@+id/applyFilterRoot"
       android:layout_width="match_parent"
-      android:layout_height="match_parent"
-      app:layoutDescription="@xml/apply_filter_motion_scene">
+      android:layout_height="match_parent">
 
-    <android.opengl.GLSurfaceView
-        android:id="@+id/glsvImg"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@id/rvFilters"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    <ImageView
+        android:id="@+id/ivImg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="@dimen/rv_height" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvFilters"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="@dimen/rv_height"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/glsvImg" />
+        android:layout_gravity="bottom" />
 
     <ProgressBar
         android:id="@+id/pbLoading"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="@{loading ? View.VISIBLE : View.GONE}" />
 
-  </androidx.constraintlayout.motion.widget.MotionLayout>
+  </FrameLayout>
 
 </layout>

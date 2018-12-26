@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <dimen name="rv_height">72dp</dimen>
-  <dimen name="item_filter_size">72dp</dimen>
+  <dimen name="rv_height">96dp</dimen>
+  <dimen name="item_filter_size">96dp</dimen>
 </resources>

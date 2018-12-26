@@ -8,12 +8,13 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.gis.featureapplyfilter.R
 import com.gis.featureapplyfilter.databinding.ItemFiltersBinding
-import com.gis.featureapplyfilter.presentation.ui.applyfilterscreen.ApplyFilterIntent.ChooseFilter
+import com.gis.utils.domain.ImageLoader
 import com.jakewharton.rxbinding2.view.RxView
 import io.reactivex.subjects.Subject
 import java.util.concurrent.TimeUnit
 
-class FiltersAdapter(private val clicksPublisher: Subject<ApplyFilterIntent>) : ListAdapter<FilterListItem, FilterViewHolder>(
+class FiltersAdapter(private val clicksPublisher: Subject<String>,
+                     private val imageLoader: ImageLoader) : ListAdapter<FilterListItem, FilterViewHolder>(
   object : DiffUtil.ItemCallback<FilterListItem>() {
     override fun areItemsTheSame(oldItem: FilterListItem, newItem: FilterListItem): Boolean =
       oldItem.name == newItem.name
@@ -29,7 +30,7 @@ class FiltersAdapter(private val clicksPublisher: Subject<ApplyFilterIntent>) : 
       parent,
       false)
 
-    return FilterViewHolder(binding)
+    return FilterViewHolder(binding, imageLoader)
   }
 
   override fun onBindViewHolder(holder: FilterViewHolder, position: Int) {
@@ -37,16 +38,14 @@ class FiltersAdapter(private val clicksPublisher: Subject<ApplyFilterIntent>) : 
   }
 }
 
-class FilterViewHolder(private val binding: ItemFiltersBinding) : RecyclerView.ViewHolder(binding.root) {
+class FilterViewHolder(private val binding: ItemFiltersBinding, private val imageLoader: ImageLoader) : RecyclerView.ViewHolder(binding.root) {
 
-  fun bind(item: FilterListItem, clicksPublisher: Subject<ApplyFilterIntent>) {
-    RxView.clicks(binding.tvFilterName)
+  fun bind(item: FilterListItem, clicksPublisher: Subject<String>) {
+    RxView.clicks(binding.ivImg)
       .skip(500, TimeUnit.MILLISECONDS)
-      .map { ChooseFilter(binding.tvFilterName.text.toString()) }
+      .map { item.name }
       .subscribe(clicksPublisher)
 
-    binding.tvFilterName.text = item.name
+    imageLoader.loadBitmap(binding.ivImg, item.image)
   }
 }
-
-data class FilterListItem(val name: String, val selected: Boolean)

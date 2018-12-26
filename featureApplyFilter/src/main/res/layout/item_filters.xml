@@ -2,17 +2,10 @@
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-  <TextView
-      android:id="@+id/tvFilterName"
-      android:layout_width="@dimen/item_filter_size"
-      android:layout_height="@dimen/item_filter_size"
-      android:ellipsize="end"
-      android:background="?attr/selectableItemBackground"
-      android:gravity="center"
-      android:orientation="vertical"
-      android:textColor="@android:color/black"
-      tools:text="None">
-
-  </TextView>
+    <ImageView
+        android:id="@+id/ivImg"
+        android:layout_width="@dimen/item_filter_size"
+        android:layout_height="@dimen/item_filter_size"
+        android:scaleType="centerCrop"/>
 
 </layout>
