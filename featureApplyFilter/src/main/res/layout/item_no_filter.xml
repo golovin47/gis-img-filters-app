@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android">
 
-  <ImageView
-      android:id="@+id/ivImg"
+  <TextView
+      android:id="@+id/tvName"
       android:layout_width="@dimen/item_filter_size"
       android:layout_height="@dimen/item_filter_size"
-      android:scaleType="centerCrop" />
+      android:gravity="center"
+      android:text="@string/no_filters"
+      android:textColor="@android:color/black" />
 
 </layout>

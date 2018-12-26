@@ -1,8 +1,7 @@
 package com.gis.featureapplyfilter.presentation.ui.applyfilterscreen
 
 import android.graphics.Bitmap
-import com.gis.featureapplyfilter.presentation.ui.applyfilterscreen.ApplyFilterIntent.ChooseFilter
-import com.gis.featureapplyfilter.presentation.ui.applyfilterscreen.ApplyFilterIntent.InitBitmapAndGetThumbnails
+import com.gis.featureapplyfilter.presentation.ui.applyfilterscreen.ApplyFilterIntent.*
 import com.gis.featureapplyfilter.presentation.ui.applyfilterscreen.ApplyFilterStateChange.*
 import com.gis.utils.BaseViewModel
 import com.gis.utils.domain.entity.PhotoFilterThumbnail
@@ -22,6 +21,13 @@ class ApplyFilterViewModel(
 
   override fun viewIntents(intentStream: Observable<*>): Observable<Any> =
     Observable.merge(listOf(
+
+      intentStream.ofType(HideActions::class.java)
+        .map { ActionsHidden },
+
+      intentStream.ofType(ShowActions::class.java)
+        .map { ActionsShown },
+
       intentStream.ofType(InitBitmapAndGetThumbnails::class.java)
         .switchMap { event ->
           Observable.fromCallable { bitmapFromImagePath?.invoke(event.imagePath) }
@@ -31,7 +37,6 @@ class ApplyFilterViewModel(
               getThumbnailsUseCase.execute(bitmap)
                 .map { items -> BitmapAndThumbnailsReceived(bitmap, items.map { it.toPresentation() }) }
                 .cast(ApplyFilterStateChange::class.java)
-                .startWith(Loading)
                 .onErrorResumeNext { e: Throwable -> handleError(e) }
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -43,7 +48,16 @@ class ApplyFilterViewModel(
           applyFilterUseCase.execute(event.bitmap, event.name)
             .map { bitmap -> FilterApplied(bitmap) }
             .cast(ApplyFilterStateChange::class.java)
-            .startWith(Loading)
+            .onErrorResumeNext { e: Throwable -> handleError(e) }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+        },
+
+      intentStream.ofType(ApplyNoFilters::class.java)
+        .switchMap { event ->
+          Observable.fromCallable { bitmapFromImagePath?.invoke(event.imagePath) }
+            .map { bitmap -> NoFiltersApplied(bitmap) }
+            .cast(ApplyFilterStateChange::class.java)
             .onErrorResumeNext { e: Throwable -> handleError(e) }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
@@ -55,16 +69,22 @@ class ApplyFilterViewModel(
 
   override fun reduceState(previousState: ApplyFilterState, stateChange: Any): ApplyFilterState =
     when (stateChange) {
-      is Loading -> previousState.copy(loading = true, error = null)
+
+      is ActionsShown -> previousState.copy(showActions = true)
+
+      is ActionsHidden -> previousState.copy(showActions = false)
 
       is BitmapAndThumbnailsReceived -> previousState.copy(
-        loading = false,
         currentBitmap = previousState.currentBitmap ?: stateChange.bitmap,
-        filters = stateChange.filters)
+        filters = stateChange.filters.toMutableList().apply {
+          add(0, FilterListItem("No Filters"))
+        })
 
-      is FilterApplied -> previousState.copy(loading = false, currentBitmap = stateChange.bitmap)
+      is NoFiltersApplied -> previousState.copy(currentBitmap = stateChange.bitmap)
 
-      is Error -> previousState.copy(loading = false, error = stateChange.error)
+      is FilterApplied -> previousState.copy(currentBitmap = stateChange.bitmap)
+
+      is Error -> previousState.copy(error = stateChange.error)
 
       is HideError -> previousState.copy(error = null)
 

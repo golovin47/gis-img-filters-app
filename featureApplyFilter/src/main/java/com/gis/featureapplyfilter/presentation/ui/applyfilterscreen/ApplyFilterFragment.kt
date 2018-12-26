@@ -13,15 +13,16 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.gis.featureapplyfilter.R
 import com.gis.featureapplyfilter.databinding.FragmentApplyFilterBinding
-import com.gis.featureapplyfilter.presentation.ui.applyfilterscreen.ApplyFilterIntent.ChooseFilter
-import com.gis.featureapplyfilter.presentation.ui.applyfilterscreen.ApplyFilterIntent.InitBitmapAndGetThumbnails
+import com.gis.featureapplyfilter.presentation.ui.applyfilterscreen.ApplyFilterIntent.*
 import com.gis.utils.BaseView
 import com.gis.utils.domain.ImageLoader
+import com.jakewharton.rxbinding2.view.RxView
 import io.reactivex.Observable
 import io.reactivex.disposables.Disposable
 import io.reactivex.subjects.PublishSubject
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import java.util.concurrent.TimeUnit
 
 class ApplyFilterFragment : Fragment(), BaseView<ApplyFilterState> {
 
@@ -77,8 +78,18 @@ class ApplyFilterFragment : Fragment(), BaseView<ApplyFilterState> {
     viewSubscription = Observable.merge(listOf(
       Observable.just(InitBitmapAndGetThumbnails(imagePath)),
 
+      RxView.clicks(binding!!.ivImg)
+        .throttleFirst(500, TimeUnit.MILLISECONDS)
+        .map {
+          if (currentState.showActions) HideActions
+          else ShowActions
+        },
+
       filterClicksPublisher
-        .map { name -> ChooseFilter(name, currentState.currentBitmap!!) }
+        .map { name ->
+          if (name == getString(R.string.no_filters)) ApplyNoFilters(imagePath)
+          else ChooseFilter(name, currentState.currentBitmap!!)
+        }
     ))
       .subscribe(vmApplyFilter.viewIntentsConsumer())
   }
@@ -90,7 +101,8 @@ class ApplyFilterFragment : Fragment(), BaseView<ApplyFilterState> {
   override fun render(state: ApplyFilterState) {
     currentState = state
 
-    binding!!.loading = state.loading
+    if (state.showActions) binding!!.applyFilterRoot.transitionToStart()
+    else binding!!.applyFilterRoot.transitionToEnd()
 
     if (state.currentBitmap != null) showPhoto(state.currentBitmap)
 

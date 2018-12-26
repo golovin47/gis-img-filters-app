@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">FeatureApplyFilter</string>
+
+    <string name="no_filters">No Filters</string>
 </resources>

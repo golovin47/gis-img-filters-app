@@ -2,4 +2,5 @@
 <resources>
   <dimen name="rv_height">96dp</dimen>
   <dimen name="item_filter_size">96dp</dimen>
+  <dimen name="action_icons_size">48dp</dimen>
 </resources>
