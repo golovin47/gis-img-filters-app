@@ -11,7 +11,6 @@ import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.databinding.DataBindingUtil
@@ -79,8 +78,9 @@ class ChooseImageFragment : Fragment(), BaseView<ChooseImageState> {
 
   override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
     if (requestCode == GALLERY_PERMISSION_REQUEST &&
-      grantResults.isNotEmpty() &&
-      grantResults[0] == PackageManager.PERMISSION_GRANTED)
+      grantResults.size == 2 &&
+      grantResults[0] == PackageManager.PERMISSION_GRANTED &&
+      grantResults[1] == PackageManager.PERMISSION_GRANTED)
       openGallery()
     else imageEventsPublisher.onNext(ImageCancelled)
   }
@@ -150,12 +150,14 @@ class ChooseImageFragment : Fragment(), BaseView<ChooseImageState> {
 
   private fun galleryPermissionGranted(): Boolean {
     return (ContextCompat.checkSelfPermission(context!!, Manifest.permission.READ_EXTERNAL_STORAGE)
-      == PackageManager.PERMISSION_GRANTED)
+      == PackageManager.PERMISSION_GRANTED) &&
+      (ContextCompat.checkSelfPermission(context!!, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        == PackageManager.PERMISSION_GRANTED)
   }
 
   private fun requestGalleryPermission() {
     requestPermissions(
-      arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
+      arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE),
       GALLERY_PERMISSION_REQUEST)
   }
 

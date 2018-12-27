@@ -5,5 +5,10 @@ import org.koin.androidx.viewmodel.ext.koin.viewModel
 import org.koin.dsl.module.module
 
 val applyFilterModule = module {
-  viewModel { ApplyFilterViewModel(get("bitmapFromImagePath"), get(), get()) }
+  viewModel { ApplyFilterViewModel(
+    get("bitmapFromImagePath"),
+    get("saveImageToStorage"),
+    get("createTempImageFile"),
+    get("goToChooseImageFromApplyFilterScreen"),
+    get(), get()) }
 }

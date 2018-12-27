@@ -25,4 +25,8 @@ class AppNavigator {
       .build()
     navController.navigate(R.id.fromChooseImageToApplyFilter, args, navOptions)
   }
+
+  fun goToChooseImageFromApplyFilterScreen() {
+    navController.navigateUp()
+  }
 }

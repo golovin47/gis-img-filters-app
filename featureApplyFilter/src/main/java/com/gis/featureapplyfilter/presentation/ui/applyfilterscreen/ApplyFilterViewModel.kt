@@ -7,12 +7,17 @@ import com.gis.utils.BaseViewModel
 import com.gis.utils.domain.entity.PhotoFilterThumbnail
 import com.gis.utils.domain.interactors.ApplyFilterUseCase
 import com.gis.utils.domain.interactors.GetThumbnailsUseCase
+import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
+import java.io.File
 
 class ApplyFilterViewModel(
-  private var bitmapFromImagePath: ((String) -> Bitmap)?,
+  private var bitmapFromImagePath: ((String) -> Observable<Bitmap>)?,
+  private var saveImageToStorage: ((Bitmap) -> Completable)?,
+  private var createTempImageFile: ((Bitmap) -> Observable<File>)?,
+  private var goBack: (() -> Unit)?,
   private val getThumbnailsUseCase: GetThumbnailsUseCase,
   private val applyFilterUseCase: ApplyFilterUseCase)
   : BaseViewModel<ApplyFilterState>() {
@@ -30,7 +35,7 @@ class ApplyFilterViewModel(
 
       intentStream.ofType(InitBitmapAndGetThumbnails::class.java)
         .switchMap { event ->
-          Observable.fromCallable { bitmapFromImagePath?.invoke(event.imagePath) }
+          bitmapFromImagePath!!.invoke(event.imagePath)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .flatMap { bitmap ->
@@ -55,9 +60,29 @@ class ApplyFilterViewModel(
 
       intentStream.ofType(ApplyNoFilters::class.java)
         .switchMap { event ->
-          Observable.fromCallable { bitmapFromImagePath?.invoke(event.imagePath) }
+          bitmapFromImagePath!!.invoke(event.imagePath)
             .map { bitmap -> NoFiltersApplied(bitmap) }
             .cast(ApplyFilterStateChange::class.java)
+            .onErrorResumeNext { e: Throwable -> handleError(e) }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+        },
+
+      intentStream.ofType(SaveImage::class.java)
+        .switchMap { event ->
+          saveImageToStorage!!.invoke(event.bitmap)
+            .andThen(
+              Observable.just(ImageSaved, Idle)
+                .doOnNext { if (it is Idle) goBack!!.invoke() })
+            .onErrorResumeNext { e: Throwable -> handleError(e) }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+        },
+
+      intentStream.ofType(ShareImage::class.java)
+        .switchMap { event ->
+          createTempImageFile!!.invoke(event.bitmap)
+            .flatMap { file -> Observable.just(FileToShareImageReceived(file), Idle) }
             .onErrorResumeNext { e: Throwable -> handleError(e) }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
@@ -69,6 +94,8 @@ class ApplyFilterViewModel(
 
   override fun reduceState(previousState: ApplyFilterState, stateChange: Any): ApplyFilterState =
     when (stateChange) {
+
+      is Idle -> previousState.copy(showImageSaved = false, fileToShareImage = null, error = null)
 
       is ActionsShown -> previousState.copy(showActions = true)
 
@@ -84,6 +111,10 @@ class ApplyFilterViewModel(
 
       is FilterApplied -> previousState.copy(currentBitmap = stateChange.bitmap)
 
+      is ImageSaved -> previousState.copy(showImageSaved = true)
+
+      is FileToShareImageReceived -> previousState.copy(fileToShareImage = stateChange.file)
+
       is Error -> previousState.copy(error = stateChange.error)
 
       is HideError -> previousState.copy(error = null)
@@ -93,6 +124,9 @@ class ApplyFilterViewModel(
 
   override fun onCleared() {
     bitmapFromImagePath = null
+    saveImageToStorage = null
+    createTempImageFile = null
+    goBack = null
     super.onCleared()
   }
 }

@@ -12,4 +12,8 @@ val navigationModule = module {
       get<AppNavigator>().goToApplyFilterFromChooseImageScreen(imagePath)
     }
   }
+
+  factory("goToChooseImageFromApplyFilterScreen") {
+    { get<AppNavigator>().goToChooseImageFromApplyFilterScreen() }
+  }
 }
