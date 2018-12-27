@@ -31,7 +31,8 @@
 
     </provider>
 
-    <activity android:name=".presentation.ui.MainActivity">
+    <activity android:name=".presentation.ui.MainActivity"
+      android:theme="@style/StartTheme">
 
       <intent-filter>
 
