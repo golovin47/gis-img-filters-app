@@ -8,7 +8,7 @@ val applyFilterModule = module {
   viewModel { ApplyFilterViewModel(
     get("bitmapFromImagePath"),
     get("saveImageToStorage"),
-    get("createTempImageFile"),
+    get("createTempImageFileAndGetUri"),
     get("goToChooseImageFromApplyFilterScreen"),
     get(), get()) }
 }

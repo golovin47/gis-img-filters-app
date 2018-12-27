@@ -1,12 +1,12 @@
 package com.gis.featureapplyfilter.presentation.ui.applyfilterscreen
 
 import android.graphics.Bitmap
-import java.io.File
+import android.net.Uri
 
 data class ApplyFilterState(
   val showActions: Boolean = true,
   val showImageSaved: Boolean = false,
-  val fileToShareImage: File? = null,
+  val uriToShareImage: Uri? = null,
   val currentBitmap: Bitmap? = null,
   val filters: List<FilterListItem> = emptyList(),
   val error: Throwable? = null)
@@ -31,7 +31,7 @@ sealed class ApplyFilterStateChange {
   class FilterApplied(val bitmap: Bitmap) : ApplyFilterStateChange()
   class NoFiltersApplied(val bitmap: Bitmap) : ApplyFilterStateChange()
   object ImageSaved : ApplyFilterStateChange()
-  class FileToShareImageReceived(val file: File) : ApplyFilterStateChange()
+  class FileToShareImageReceived(val uri: Uri) : ApplyFilterStateChange()
   class Error(val error: Throwable) : ApplyFilterStateChange()
   object HideError : ApplyFilterStateChange()
 }

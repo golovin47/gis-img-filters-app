@@ -2,12 +2,12 @@ package com.gis.featureapplyfilter.presentation.ui.applyfilterscreen
 
 import android.content.Intent
 import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.core.content.FileProvider
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
@@ -26,7 +26,6 @@ import io.reactivex.disposables.Disposable
 import io.reactivex.subjects.PublishSubject
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import java.io.File
 import java.util.concurrent.TimeUnit
 
 class ApplyFilterFragment : Fragment(), BaseView<ApplyFilterState> {
@@ -79,8 +78,7 @@ class ApplyFilterFragment : Fragment(), BaseView<ApplyFilterState> {
     imageLoader.loadBitmap(binding!!.ivImg, bitmap)
   }
 
-  private fun sharePhoto(file: File) {
-    val uri = FileProvider.getUriForFile(context!!, "com.gis.imgfiltersapp.provider", file)
+  private fun sharePhoto(uri: Uri) {
     val intent = Intent(Intent.ACTION_SEND).apply {
       type = "image/jpg"
       putExtra(Intent.EXTRA_STREAM, uri)
@@ -123,7 +121,7 @@ class ApplyFilterFragment : Fragment(), BaseView<ApplyFilterState> {
   override fun render(state: ApplyFilterState) {
     currentState = state
 
-    if (state.fileToShareImage != null) sharePhoto(state.fileToShareImage)
+    if (state.uriToShareImage != null) sharePhoto(state.uriToShareImage)
 
     if (state.showImageSaved)
       Toast.makeText(context!!, R.string.image_saved, Toast.LENGTH_SHORT).show()

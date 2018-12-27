@@ -1,7 +1,7 @@
 <resources>
-    <string name="app_name">FeatureApplyFilter</string>
+  <string name="app_name">FeatureApplyFilter</string>
 
-    <string name="no_filters">No Filters</string>
-    <string name="image_saved">Image saved to your Photos</string>
-    <string name="share_image">Share image using</string>
+  <string name="no_filters">No Filters</string>
+  <string name="image_saved">Image saved to your Photos</string>
+  <string name="share_image">Share image using</string>
 </resources>

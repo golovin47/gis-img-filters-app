@@ -1,39 +1,114 @@
 package com.gis.featurechooseimage.presentation.ui.chooseimagescreen
 
+import android.net.Uri
 import com.gis.featurechooseimage.presentation.ui.chooseimagescreen.ChooseImageIntent.*
 import com.gis.featurechooseimage.presentation.ui.chooseimagescreen.ChooseImageStateChange.*
 import com.gis.utils.BaseViewModel
+import com.gis.utils.domain.entity.FileUriAndPath
 import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
 
-class ChooseImageViewModel(var goToApplyFilter: ((String) -> Unit)?) : BaseViewModel<ChooseImageState>() {
+class ChooseImageViewModel(
+  private var getPathFromUri: ((Uri) -> Observable<String>)?,
+  private var getUriAndFilePath: (() -> Observable<FileUriAndPath>)?,
+  private var goToApplyFilter: ((String) -> Unit)?) : BaseViewModel<ChooseImageState>() {
 
   override fun initState(): ChooseImageState = ChooseImageState()
 
   override fun viewIntents(intentStream: Observable<*>): Observable<Any> =
     Observable.merge(listOf(
-      intentStream.ofType(ChooseImage::class.java)
-        .map { Loading },
+
+      intentStream.ofType(ChooseImageIntent.OpenCamera::class.java)
+        .switchMap { event ->
+          getUriAndFilePath!!.invoke()
+            .flatMap { fileUriAndPath ->
+              Observable.just(ChooseImageStateChange.OpenCamera(fileUriAndPath.uri, fileUriAndPath.path), Idle)
+            }
+            .cast(ChooseImageStateChange::class.java)
+            .onErrorResumeNext { e: Throwable -> handleError(e) }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+        },
+
+      intentStream.ofType(ChooseImageIntent.OpenGallery::class.java)
+        .flatMap { Observable.just(ChooseImageStateChange.OpenGallery, Idle) },
+
+      intentStream.ofType(ChooseImageIntent.RequestPermissionsForCamera::class.java)
+        .flatMap { Observable.just(ChooseImageStateChange.RequestPermissionsForCamera, Idle) },
+
+      intentStream.ofType(ChooseImageIntent.RequestPermissionsForGallery::class.java)
+        .flatMap { Observable.just(ChooseImageStateChange.RequestPermissionsForGallery, Idle) },
+
+      intentStream.ofType(ChooseImageIntent.ShowExtraPermissionsDialog::class.java)
+        .map { ChooseImageStateChange.ShowExtraPermissionsDialog },
+
+      intentStream.ofType(ChooseImageIntent.DismissExtraPermissionsDialog::class.java)
+        .map { ChooseImageStateChange.DismissExtraPermissionsDialog },
+
+      intentStream.ofType(ChooseImageIntent.GoToAppSettings::class.java)
+        .flatMap { Observable.just(ChooseImageStateChange.GoToAppSettings, Idle) },
 
       intentStream.ofType(ImageCancelled::class.java)
-        .map { Cancelled },
+        .map { Idle },
 
-      intentStream.ofType(ChooseImageIntent.ImagePathCreated::class.java)
-        .map { event -> ChooseImageStateChange.ImagePathCreated(event.imagePath) },
-
-      intentStream.ofType(ImageChosen::class.java)
+      intentStream.ofType(CameraImageChosen::class.java)
         .doOnNext { event -> goToApplyFilter?.invoke(event.imagePath) }
-        .map { Cancelled }
+        .map { Idle },
+
+      intentStream.ofType(GalleryImageChosen::class.java)
+        .switchMap { event ->
+          getPathFromUri!!.invoke(event.uri)
+            .doOnNext { goToApplyFilter?.invoke(it) }
+            .map { Idle }
+            .cast(ChooseImageStateChange::class.java)
+            .onErrorResumeNext { e: Throwable -> handleError(e) }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+        }
     ))
+
+  private fun handleError(e: Throwable): Observable<ChooseImageStateChange> =
+    Observable.just(Error(e), HideError)
 
   override fun reduceState(previousState: ChooseImageState, stateChange: Any): ChooseImageState =
     when (stateChange) {
-      is Loading -> previousState.copy(loading = true, error = null)
+      is Idle -> previousState.copy(
+        openCamera = false,
+        openGallery = false,
+        requestPermissionsForCamera = false,
+        requestPermissionsForGallery = false,
+        showExtraPermissionsDialog = false,
+        goToAppSettings = false,
+        error = null)
 
-      is Cancelled -> previousState.copy(loading = false, imagePath = "", error = null)
+      is ChooseImageStateChange.OpenCamera -> previousState.copy(
+        openCamera = true,
+        uriForPhoto = stateChange.uri,
+        imagePath = stateChange.path)
 
-      is ChooseImageStateChange.ImagePathCreated -> previousState.copy(imagePath = stateChange.imagePath)
+      is ChooseImageStateChange.OpenGallery -> previousState.copy(openGallery = true)
 
-      is Error -> previousState.copy(loading = false, error = stateChange.error)
+      is ChooseImageStateChange.RequestPermissionsForCamera -> previousState.copy(
+        requestPermissionsForCamera = true,
+        requestPermissionsForGallery = false)
+
+      is ChooseImageStateChange.RequestPermissionsForGallery -> previousState.copy(
+        requestPermissionsForGallery = true,
+        requestPermissionsForCamera = false)
+
+      is ChooseImageStateChange.ShowExtraPermissionsDialog -> previousState.copy(
+        requestPermissionsForCamera = false,
+        requestPermissionsForGallery = false,
+        showExtraPermissionsDialog = true)
+
+      is ChooseImageStateChange.DismissExtraPermissionsDialog -> previousState.copy(
+        showExtraPermissionsDialog = false)
+
+      is ChooseImageStateChange.GoToAppSettings -> previousState.copy(
+        goToAppSettings = true)
+
+      is Error -> previousState.copy(error = stateChange.error)
 
       is HideError -> previousState.copy(error = null)
 
@@ -42,6 +117,8 @@ class ChooseImageViewModel(var goToApplyFilter: ((String) -> Unit)?) : BaseViewM
 
   override fun onCleared() {
     goToApplyFilter = null
+    getPathFromUri = null
+    getUriAndFilePath = null
     super.onCleared()
   }
 }

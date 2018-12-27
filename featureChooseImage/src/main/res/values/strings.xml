@@ -2,4 +2,10 @@
   <string name="app_name">featureChooseImage</string>
   <string name="take_a_photo">Take a Photo</string>
   <string name="choose_from_gallery">Choose from gallery</string>
+  <string name="intro_text">To apply filters you should</string>
+  <string name="or">or</string>
+  <string name="permissions_dialog_title">Permissions are needed</string>
+  <string name="permissions_dialog_message">To use this feature you need to grant permissions in app settings. </string>
+  <string name="cancel">Cancel</string>
+  <string name="go_to_settings">Go to Settings</string>
 </resources>

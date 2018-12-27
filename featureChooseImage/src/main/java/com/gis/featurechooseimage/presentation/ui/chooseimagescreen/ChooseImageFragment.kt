@@ -2,17 +2,18 @@ package com.gis.featurechooseimage.presentation.ui.chooseimagescreen
 
 import android.Manifest
 import android.app.Activity
+import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
-import android.os.Environment
 import android.provider.MediaStore
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
@@ -26,16 +27,17 @@ import io.reactivex.Observable
 import io.reactivex.disposables.Disposable
 import io.reactivex.subjects.PublishSubject
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import java.io.File
-import java.text.SimpleDateFormat
-import java.util.*
 import java.util.concurrent.TimeUnit
 
 class ChooseImageFragment : Fragment(), BaseView<ChooseImageState> {
 
   private val CAMERA_PHOTO_REQUEST = 0x099
   private val GALLERY_PHOTO_REQUEST = 0x098
-  private val GALLERY_PERMISSION_REQUEST = 0x97
+  private val CAMERA_PERMISSIONS_REQUEST = 0x097
+  private val GALLERY_PERMISSIONS_REQUEST = 0x096
+  private val EXTRA_DIALOG_PERMISSIONS_REQUEST = 0x095
+
+  private lateinit var permissionAlertDialog: AlertDialog
 
   private val imageEventsPublisher = PublishSubject.create<ChooseImageIntent>()
   private lateinit var viewSubscriptions: Disposable
@@ -51,6 +53,7 @@ class ChooseImageFragment : Fragment(), BaseView<ChooseImageState> {
 
   override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
     initBinding(inflater, container)
+    initPermissionsAlertDialog()
     initIntents()
 
     return binding!!.root
@@ -63,50 +66,61 @@ class ChooseImageFragment : Fragment(), BaseView<ChooseImageState> {
   }
 
   override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-    if (requestCode == CAMERA_PHOTO_REQUEST) {
-      if (resultCode == Activity.RESULT_OK)
-        processCameraPhoto()
-      else photoCancelled()
-    }
+    when (requestCode) {
+      CAMERA_PHOTO_REQUEST ->
+        if (resultCode == Activity.RESULT_OK) processCameraPhoto()
+        else photoCancelled()
 
-    if (requestCode == GALLERY_PHOTO_REQUEST) {
-      if (resultCode == Activity.RESULT_OK)
-        processGalleryPhoto(data!!.data!!)
-      else photoCancelled()
+      GALLERY_PHOTO_REQUEST ->
+        if (resultCode == Activity.RESULT_OK) processGalleryPhoto(data!!.data!!)
+        else photoCancelled()
     }
   }
 
   override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-    if (requestCode == GALLERY_PERMISSION_REQUEST &&
-      grantResults.size == 2 &&
-      grantResults[0] == PackageManager.PERMISSION_GRANTED &&
-      grantResults[1] == PackageManager.PERMISSION_GRANTED)
-      openGallery()
-    else imageEventsPublisher.onNext(ImageCancelled)
+    if (requestCode == CAMERA_PERMISSIONS_REQUEST || requestCode == GALLERY_PERMISSIONS_REQUEST)
+      if (grantResults.size == 2)
+        if (grantResults[0] == PackageManager.PERMISSION_GRANTED &&
+          grantResults[1] == PackageManager.PERMISSION_GRANTED)
+          imageEventsPublisher.onNext(if (requestCode == CAMERA_PERMISSIONS_REQUEST) OpenCamera else OpenGallery)
+        else imageEventsPublisher.onNext(ShowExtraPermissionsDialog)
   }
 
   private fun initBinding(inflater: LayoutInflater, container: ViewGroup?) {
     binding = DataBindingUtil.inflate(inflater, R.layout.fragment_choose_image, container, false)
   }
 
+  private fun initPermissionsAlertDialog() {
+    permissionAlertDialog = AlertDialog.Builder(context!!).apply {
+      setTitle(R.string.permissions_dialog_title)
+      setMessage(R.string.permissions_dialog_message)
+      setCancelable(false)
+      setPositiveButton(R.string.go_to_settings) { _: DialogInterface, _: Int ->
+        imageEventsPublisher.onNext(DismissExtraPermissionsDialog)
+        imageEventsPublisher.onNext(GoToAppSettings)
+      }
+      setNegativeButton(R.string.cancel) { _: DialogInterface, _: Int ->
+        imageEventsPublisher.onNext(DismissExtraPermissionsDialog)
+      }
+    }.create()
+  }
+
   override fun initIntents() {
     viewSubscriptions = Observable.merge(listOf(
 
       RxView.clicks(binding!!.btnCamera)
-        .skip(500, TimeUnit.MILLISECONDS)
-        .doOnNext {
-          openCamera()
-        }
-        .map { ChooseImage },
+        .throttleFirst(500, TimeUnit.MILLISECONDS)
+        .map {
+          if (permissionsGranted()) OpenCamera
+          else RequestPermissionsForCamera
+        },
 
       RxView.clicks(binding!!.btnGallery)
-        .skip(500, TimeUnit.MILLISECONDS)
-        .doOnNext {
-          if (galleryPermissionGranted())
-            openGallery()
-          else requestGalleryPermission()
-        }
-        .map { ChooseImage },
+        .throttleFirst(500, TimeUnit.MILLISECONDS)
+        .map {
+          if (permissionsGranted()) OpenGallery
+          else RequestPermissionsForGallery
+        },
 
       imageEventsPublisher
     )
@@ -118,26 +132,23 @@ class ChooseImageFragment : Fragment(), BaseView<ChooseImageState> {
     vmChooseImage.stateReceived().observe(this, Observer { state -> render(state) })
   }
 
-  private fun openCamera() {
-    val photoFile = createFileForCameraPhoto()
-    val photoUri = FileProvider.getUriForFile(context!!, "com.gis.imgfiltersapp.provider", photoFile)
+  private fun showExtraPermissionDialog() {
+    permissionAlertDialog.show()
+  }
+
+  private fun dismissExtraPermissionsDialog() {
+    permissionAlertDialog.dismiss()
+  }
+
+  private fun openCamera(uri: Uri) {
     val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
-      putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+      putExtra(MediaStore.EXTRA_OUTPUT, uri)
     }
     startActivityForResult(intent, CAMERA_PHOTO_REQUEST)
   }
 
-  private fun createFileForCameraPhoto(): File {
-    val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-    val fileName = "IMG_" + timestamp + "_"
-    val storageDir = context!!.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-    val file = File.createTempFile(fileName, ".jpg", storageDir)
-    imageEventsPublisher.onNext(ImagePathCreated(file.absolutePath))
-    return file
-  }
-
   private fun processCameraPhoto() {
-    imageEventsPublisher.onNext(ImageChosen(currentState.imagePath))
+    imageEventsPublisher.onNext(CameraImageChosen(currentState.imagePath))
   }
 
   private fun openGallery() {
@@ -145,33 +156,26 @@ class ChooseImageFragment : Fragment(), BaseView<ChooseImageState> {
   }
 
   private fun processGalleryPhoto(uri: Uri) {
-    imageEventsPublisher.onNext(ImageChosen(getPathFromUri(uri)))
+    imageEventsPublisher.onNext(GalleryImageChosen(uri))
   }
 
-  private fun galleryPermissionGranted(): Boolean {
+  private fun permissionsGranted(): Boolean {
     return (ContextCompat.checkSelfPermission(context!!, Manifest.permission.READ_EXTERNAL_STORAGE)
       == PackageManager.PERMISSION_GRANTED) &&
       (ContextCompat.checkSelfPermission(context!!, Manifest.permission.WRITE_EXTERNAL_STORAGE)
         == PackageManager.PERMISSION_GRANTED)
   }
 
-  private fun requestGalleryPermission() {
+  private fun requestPermissions(requestCode: Int) {
     requestPermissions(
       arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE),
-      GALLERY_PERMISSION_REQUEST)
+      requestCode)
   }
 
-  private fun getPathFromUri(uri: Uri): String {
-    var resultPath = ""
-    val proj: Array<String> = arrayOf(MediaStore.Images.Media.DATA)
-    val cursor = context!!.contentResolver.query(uri, proj, null, null, null)
-    if (cursor != null && cursor.moveToFirst()) {
-      val colIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
-      resultPath = cursor.getString(colIndex)
-    }
-    cursor?.close()
-
-    return resultPath
+  private fun goToAppSettings() {
+    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+      Uri.parse("package:" + context!!.packageName))
+    startActivityForResult(intent, EXTRA_DIALOG_PERMISSIONS_REQUEST)
   }
 
   private fun photoCancelled() {
@@ -181,10 +185,17 @@ class ChooseImageFragment : Fragment(), BaseView<ChooseImageState> {
   override fun render(state: ChooseImageState) {
     currentState = state
 
-    binding!!.loading = state.loading
+    if (state.openCamera) openCamera(state.uriForPhoto!!)
 
-    if (state.loading) binding!!.chooseImageRoot.transitionToEnd()
-    else binding!!.chooseImageRoot.transitionToStart()
+    if (state.openGallery) openGallery()
+
+    if (state.requestPermissionsForCamera) requestPermissions(CAMERA_PERMISSIONS_REQUEST)
+    if (state.requestPermissionsForGallery) requestPermissions(GALLERY_PERMISSIONS_REQUEST)
+
+    if (state.showExtraPermissionsDialog) showExtraPermissionDialog()
+    else dismissExtraPermissionsDialog()
+
+    if (state.goToAppSettings) goToAppSettings()
 
     if (state.error != null)
       Snackbar.make(view!!, state.error.message!!, Snackbar.LENGTH_SHORT).show()

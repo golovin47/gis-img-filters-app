@@ -1,6 +1,7 @@
 package com.gis.featureapplyfilter.presentation.ui.applyfilterscreen
 
 import android.graphics.Bitmap
+import android.net.Uri
 import com.gis.featureapplyfilter.presentation.ui.applyfilterscreen.ApplyFilterIntent.*
 import com.gis.featureapplyfilter.presentation.ui.applyfilterscreen.ApplyFilterStateChange.*
 import com.gis.utils.BaseViewModel
@@ -11,12 +12,11 @@ import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
-import java.io.File
 
 class ApplyFilterViewModel(
   private var bitmapFromImagePath: ((String) -> Observable<Bitmap>)?,
   private var saveImageToStorage: ((Bitmap) -> Completable)?,
-  private var createTempImageFile: ((Bitmap) -> Observable<File>)?,
+  private var createTempImageFileAndGetUri: ((Bitmap) -> Observable<Uri>)?,
   private var goBack: (() -> Unit)?,
   private val getThumbnailsUseCase: GetThumbnailsUseCase,
   private val applyFilterUseCase: ApplyFilterUseCase)
@@ -81,8 +81,8 @@ class ApplyFilterViewModel(
 
       intentStream.ofType(ShareImage::class.java)
         .switchMap { event ->
-          createTempImageFile!!.invoke(event.bitmap)
-            .flatMap { file -> Observable.just(FileToShareImageReceived(file), Idle) }
+          createTempImageFileAndGetUri!!.invoke(event.bitmap)
+            .flatMap { uri -> Observable.just(FileToShareImageReceived(uri), Idle) }
             .onErrorResumeNext { e: Throwable -> handleError(e) }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
@@ -95,7 +95,7 @@ class ApplyFilterViewModel(
   override fun reduceState(previousState: ApplyFilterState, stateChange: Any): ApplyFilterState =
     when (stateChange) {
 
-      is Idle -> previousState.copy(showImageSaved = false, fileToShareImage = null, error = null)
+      is Idle -> previousState.copy(showImageSaved = false, uriToShareImage = null, error = null)
 
       is ActionsShown -> previousState.copy(showActions = true)
 
@@ -113,7 +113,7 @@ class ApplyFilterViewModel(
 
       is ImageSaved -> previousState.copy(showImageSaved = true)
 
-      is FileToShareImageReceived -> previousState.copy(fileToShareImage = stateChange.file)
+      is FileToShareImageReceived -> previousState.copy(uriToShareImage = stateChange.uri)
 
       is Error -> previousState.copy(error = stateChange.error)
 
@@ -125,7 +125,7 @@ class ApplyFilterViewModel(
   override fun onCleared() {
     bitmapFromImagePath = null
     saveImageToStorage = null
-    createTempImageFile = null
+    createTempImageFileAndGetUri = null
     goBack = null
     super.onCleared()
   }

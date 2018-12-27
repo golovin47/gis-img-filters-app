@@ -1,44 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+  xmlns:app="http://schemas.android.com/apk/res-auto">
 
-  <data>
+  <androidx.constraintlayout.widget.ConstraintLayout
+    android:id="@+id/chooseImageRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:animateLayoutChanges="true">
 
-    <variable
-        name="loading"
-        type="Boolean" />
-
-  </data>
-
-  <androidx.constraintlayout.motion.widget.MotionLayout
-      android:id="@+id/chooseImageRoot"
-      android:layout_width="match_parent"
-      android:layout_height="match_parent"
-      app:layoutDescription="@xml/choose_image_motion_scene">
-
-    <Button
-        android:id="@+id/btnCamera"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:enabled="@{!loading}"
-        android:padding="8dp"
-        android:text="@string/take_a_photo"
-        android:textAllCaps="false" />
+    <TextView
+      android:id="@+id/tvIntro"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginBottom="16dp"
+      android:text="@string/intro_text"
+      android:textColor="@android:color/black"
+      android:textSize="24sp"
+      app:layout_constraintBottom_toTopOf="@id/btnCamera"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toTopOf="parent"
+      app:layout_constraintVertical_chainStyle="packed" />
 
     <Button
-        android:id="@+id/btnGallery"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:enabled="@{!loading}"
-        android:padding="8dp"
-        android:text="@string/choose_from_gallery"
-        android:textAllCaps="false" />
+      android:id="@+id/btnCamera"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:padding="16dp"
+      android:text="@string/take_a_photo"
+      android:textAllCaps="false"
+      app:layout_constraintBottom_toTopOf="@id/tvOr"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toBottomOf="@id/tvIntro" />
 
-    <ProgressBar
-        android:id="@+id/pbLoading"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+    <TextView
+      android:id="@+id/tvOr"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="16dp"
+      android:layout_marginBottom="16dp"
+      android:text="@string/or"
+      android:textColor="@android:color/black"
+      android:textSize="24sp"
+      app:layout_constraintBottom_toTopOf="@id/btnGallery"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toBottomOf="@id/btnCamera" />
 
-  </androidx.constraintlayout.motion.widget.MotionLayout>
+    <Button
+      android:id="@+id/btnGallery"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:padding="16dp"
+      android:text="@string/choose_from_gallery"
+      android:textAllCaps="false"
+      app:layout_constraintBottom_toBottomOf="parent"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toBottomOf="@id/tvOr" />
+
+  </androidx.constraintlayout.widget.ConstraintLayout>
 
 </layout>
