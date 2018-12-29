@@ -17,6 +17,12 @@ val navigationModule = module {
     { get<AppNavigator>().goToCameraFromChooseImageScreen() }
   }
 
+  factory(name = "goToTakenPhotoFromCameraScreen") {
+    { imagePath: String ->
+      get<AppNavigator>().goToTakenPhotoFromCameraScreen(imagePath)
+    }
+  }
+
   factory("goBack") {
     { get<AppNavigator>().goBack() }
   }

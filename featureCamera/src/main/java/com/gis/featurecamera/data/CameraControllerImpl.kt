@@ -15,14 +15,17 @@ import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.OnLifecycleEvent
 import com.gis.featurecamera.data.entity.CameraCaptureStateEvent.OnClosed
 import com.gis.featurecamera.data.entity.CameraCaptureStateEvent.OnConfigured
-import com.gis.featurecamera.data.entity.CameraControllerEvent
-import com.gis.featurecamera.data.entity.CameraControllerEvent.*
 import com.gis.featurecamera.data.entity.CameraParams
 import com.gis.featurecamera.data.entity.CameraStateEvent.CameraClosed
 import com.gis.featurecamera.data.entity.CameraStateEvent.CameraOpened
 import com.gis.featurecamera.data.entity.CaptureSessionData
 import com.gis.featurecamera.data.exception.CameraOpenException
+import com.gis.featurecamera.domain.CameraController
+import com.gis.featurecamera.domain.entity.CameraControllerEvent
+import com.gis.featurecamera.domain.entity.CameraControllerEvent.*
+import com.gis.featurecamera.domain.entity.CameraFacing
 import com.gis.featurecamera.presentation.ui.customview.AutoFitTextureView
+import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -31,9 +34,9 @@ import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import java.io.File
 
-class CameraController(
+class CameraControllerImpl(
   context: Context,
-  private val createTempFileForPhoto: () -> Observable<File>) : LifecycleObserver {
+  private val createTempFileForPhoto: () -> Observable<File>) : CameraController, LifecycleObserver {
 
   private val orientation = Configuration.ORIENTATION_PORTRAIT
   private lateinit var cameraParams: CameraParams
@@ -48,7 +51,7 @@ class CameraController(
   private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
   private val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
 
-  private val cameraManagerEventsPublisher = PublishSubject.create<CameraControllerEvent>()
+  private val cameraControllerEventsPublisher = PublishSubject.create<CameraControllerEvent>()
   private val onPausePublisher = PublishSubject.create<Any>()
   private val takePhotoClickPublisher = PublishSubject.create<Any>()
   private val switchCameraClickPublisher = PublishSubject.create<Any>()
@@ -72,17 +75,18 @@ class CameraController(
     onPausePublisher.onNext(this)
   }
 
-  fun prepareCameraController(textureView: AutoFitTextureView,
-                              lifecycle: Lifecycle) {
-    this.textureView = textureView
-    lifecycle.addObserver(this)
+  override fun prepareCameraController(textureView: TextureView,
+                                       lifecycle: Lifecycle): Completable =
+    Completable.fromAction {
+      this.textureView = textureView as AutoFitTextureView
+      lifecycle.addObserver(this)
 
-    initCameraParamsAndAspectRatio()
-    initSurfaceTextureListener()
+      initCameraParamsAndAspectRatio()
+      initSurfaceTextureListener()
 
-    // For some reasons onSurfaceSizeChanged is not always called, this is a workaround
-    initSurfaceSizeChangedBackup()
-  }
+      // For some reasons onSurfaceSizeChanged is not always called, this is a workaround
+      initSurfaceSizeChangedBackup()
+    }
 
   private fun initCameraParamsAndAspectRatio() {
     lateinit var cameraId: String
@@ -90,14 +94,14 @@ class CameraController(
       cameraId = GISCameraHelper.chooseDefaultCamera(cameraManager)
 
       if (cameraId.isEmpty()) {
-        cameraManagerEventsPublisher.onNext(Exception(IllegalStateException("Can't find any camera")))
+        cameraControllerEventsPublisher.onNext(Exception(IllegalStateException("Can't find any camera")))
         return
       }
 
       cameraParams = getCameraParams(cameraId)
       setTextureAspectRatio(cameraParams)
     } catch (e: CameraAccessException) {
-      cameraManagerEventsPublisher.onNext(Exception(IllegalStateException("Can't find any camera")))
+      cameraControllerEventsPublisher.onNext(Exception(IllegalStateException("Can't find any camera")))
       return
     }
   }
@@ -129,7 +133,11 @@ class CameraController(
     }
   }
 
-  fun observeEvents() = cameraManagerEventsPublisher
+  override fun observeCameraEvents() = cameraControllerEventsPublisher
+
+  override fun takePhoto(): Completable = Completable.fromAction { takePhotoClickPublisher.onNext(this) }
+
+  override fun switchCamera(): Completable = Completable.fromAction { switchCameraClickPublisher.onNext(this) }
 
   private fun subscribe() {
     subscriptions.clear()
@@ -187,10 +195,10 @@ class CameraController(
       Observable.combineLatest(
         previewObservable, takePhotoClickPublisher, BiFunction<CaptureSessionData, Any, CaptureSessionData> { captureSessionData, o -> captureSessionData })
         .firstElement().toObservable()
-        .doOnNext { cameraManagerEventsPublisher.onNext(FocusStarted) }
+        .doOnNext { cameraControllerEventsPublisher.onNext(FocusStarted) }
         .flatMap { waitForAf(it) }
         .flatMap { waitForAe(it) }
-        .doOnNext { cameraManagerEventsPublisher.onNext(FocusFinished) }
+        .doOnNext { cameraControllerEventsPublisher.onNext(FocusFinished) }
         .flatMap { captureSessionData -> captureStillPicture(captureSessionData.session) }
         .subscribe({ }, { onError(it) })
     )
@@ -234,9 +242,9 @@ class CameraController(
     unsubscribe()
 
     when (error) {
-      is CameraAccessException -> cameraManagerEventsPublisher.onNext(CameraAccessControllerException)
-      is CameraOpenException -> cameraManagerEventsPublisher.onNext(CameraOpenControllerException(error))
-      else -> cameraManagerEventsPublisher.onNext(Exception(error))
+      is CameraAccessException -> cameraControllerEventsPublisher.onNext(CameraAccessControllerException)
+      is CameraOpenException -> cameraControllerEventsPublisher.onNext(CameraOpenControllerException(error))
+      else -> cameraControllerEventsPublisher.onNext(Exception(error))
     }
   }
 
@@ -252,6 +260,7 @@ class CameraController(
       cameraParams = getCameraParams(cameraId)
       setTextureAspectRatio(cameraParams)
       subscribe()
+      cameraControllerEventsPublisher.onNext(CameraSwitched(getCameraFacing()))
       // waiting for textureView to be measured
     } catch (e: CameraAccessException) {
       onError(e)
@@ -267,7 +276,7 @@ class CameraController(
           .observeOn(Schedulers.io())
           .flatMap { imageReader -> GISImageSaver.save(imageReader.acquireLatestImage(), file).toObservable() }
           .observeOn(AndroidSchedulers.mainThread())
-      }.subscribe { file -> cameraManagerEventsPublisher.onNext(PhotoTaken(file.absolutePath, getLensFacingPhotoType())) }
+      }.subscribe { file -> cameraControllerEventsPublisher.onNext(PhotoTaken(file.absolutePath)) }
     )
   }
 
@@ -277,8 +286,11 @@ class CameraController(
     return CameraParams(cameraId, characteristics, previewSize)
   }
 
-  private fun getLensFacingPhotoType(): Int =
-    cameraParams.characteristics.get(CameraCharacteristics.LENS_FACING)!!
+  private fun getCameraFacing(): CameraFacing {
+    val facingType = cameraParams.characteristics.get(CameraCharacteristics.LENS_FACING)
+    return if (facingType == CameraCharacteristics.LENS_FACING_BACK) CameraFacing.FacingRear
+    else CameraFacing.FacingFront
+  }
 
   private fun contains(modes: IntArray?, mode: Int): Boolean {
     if (modes == null) {
