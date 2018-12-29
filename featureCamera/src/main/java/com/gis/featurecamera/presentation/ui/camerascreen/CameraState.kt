@@ -13,7 +13,11 @@ data class CameraState(
 
 
 sealed class CameraIntent {
-  class PrepareCamera(val textureView: TextureView, val lifecycle: Lifecycle) : CameraIntent()
+  class PrepareCamera(
+    val orientation: Int,
+    val textureView: TextureView,
+    val lifecycle: Lifecycle) : CameraIntent()
+
   object TakePhoto : CameraIntent()
   object SwitchCamera : CameraIntent()
 }

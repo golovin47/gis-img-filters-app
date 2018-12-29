@@ -7,7 +7,6 @@ import com.gis.featurecamera.data.entity.CaptureSessionData
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
-import java.util.*
 import java.util.concurrent.TimeUnit
 
 class ConvergeWaitHelper private constructor(

@@ -5,8 +5,8 @@ import androidx.lifecycle.Lifecycle
 import com.gis.featurecamera.domain.CameraController
 
 class PrepareCameraControllerUseCase(private val cameraController: CameraController) {
-  fun execute(textureView: TextureView, lifecycle: Lifecycle) =
-    cameraController.prepareCameraController(textureView, lifecycle)
+  fun execute(orientation: Int, textureView: TextureView, lifecycle: Lifecycle) =
+    cameraController.prepareCameraController(orientation, textureView, lifecycle)
 }
 
 

@@ -27,7 +27,7 @@ class CameraViewModel(
 
       intentStream.ofType(PrepareCamera::class.java)
         .switchMap { event ->
-          prepareCameraControllerUseCase.execute(event.textureView, event.lifecycle)
+          prepareCameraControllerUseCase.execute(event.orientation, event.textureView, event.lifecycle)
             .andThen(observeCameraEventsUseCase.execute())
             .map { cameraEvent -> mapCameraEvent(cameraEvent) }
             .doOnNext { stateChange -> navigateIfNeed(stateChange) }

@@ -2,6 +2,7 @@ package com.gis.featurecamera.presentation.ui.camerascreen
 
 import android.annotation.SuppressLint
 import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -67,7 +68,10 @@ class CameraFragment : Fragment(), BaseView<CameraState> {
   override fun initIntents() {
     Observable.merge(listOf(
 
-      Observable.just(PrepareCamera(binding!!.textureView, lifecycle)),
+      Observable.just(PrepareCamera(
+        Configuration.ORIENTATION_PORTRAIT,
+        binding!!.textureView,
+        lifecycle)),
 
       RxView.clicks(binding!!.btnTakePhoto)
         .throttleFirst(1000, TimeUnit.MILLISECONDS)
@@ -89,12 +93,10 @@ class CameraFragment : Fragment(), BaseView<CameraState> {
   }
 
   override fun render(state: CameraState) {
-    if (state.focusState is FocusState.FocusStarted) {
-      binding!!.ivFocus.visibility = View.VISIBLE
-      binding!!.ivFocus.animate().scaleX(2f).scaleY(2f).setDuration(300)
-    } else {
-      binding!!.ivFocus.visibility = View.GONE
-    }
+
+    binding!!.ivFocus.visibility =
+      if (state.focusState is FocusState.FocusStarted) View.VISIBLE
+      else View.GONE
 
     if (state.error != null)
       Snackbar.make(binding!!.root, state.error.message.toString(), Snackbar.LENGTH_SHORT).show()

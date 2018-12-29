@@ -3,6 +3,8 @@ package com.gis.featurecamera.data
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.ImageFormat
+import android.graphics.Matrix
+import android.graphics.RectF
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.*
 import android.hardware.camera2.CameraAccessException
@@ -38,7 +40,7 @@ class CameraControllerImpl(
   context: Context,
   private val createTempFileForPhoto: () -> Observable<File>) : CameraController, LifecycleObserver {
 
-  private val orientation = Configuration.ORIENTATION_PORTRAIT
+  private var orientation: Int = 0
   private lateinit var cameraParams: CameraParams
   private lateinit var surface: Surface
   private var imageReader: ImageReader? = null
@@ -75,13 +77,17 @@ class CameraControllerImpl(
     onPausePublisher.onNext(this)
   }
 
-  override fun prepareCameraController(textureView: TextureView,
+  override fun prepareCameraController(orientation: Int,
+                                       textureView: TextureView,
                                        lifecycle: Lifecycle): Completable =
     Completable.fromAction {
+      this.orientation = orientation
+
       this.textureView = textureView as AutoFitTextureView
       lifecycle.addObserver(this)
 
       initCameraParamsAndAspectRatio()
+      applyCorrectCameraSensorOrientation(textureView.width, textureView.height)
       initSurfaceTextureListener()
 
       // For some reasons onSurfaceSizeChanged is not always called, this is a workaround
@@ -110,6 +116,7 @@ class CameraControllerImpl(
     textureView.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
 
       override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
+        applyCorrectCameraSensorOrientation(textureView.width, textureView.height)
         surfaceTextureAvailablePublisher.onNext(surface)
       }
 
@@ -131,6 +138,24 @@ class CameraControllerImpl(
         surfaceTextureAvailablePublisher.onNext(textureView.surfaceTexture)
       }
     }
+  }
+
+  private fun applyCorrectCameraSensorOrientation(width: Int, height: Int) {
+    val matrix = Matrix()
+    val previewSize = cameraParams.previewSize
+    val rotation = windowManager.defaultDisplay.rotation
+    val textureRectF = RectF(0f, 0f, width.toFloat(), height.toFloat())
+    val previewRectF = RectF(0f, 0f, previewSize.height.toFloat(), previewSize.width.toFloat())
+    val centerX = textureRectF.centerX()
+    val centerY = textureRectF.centerY()
+    if (rotation == Surface.ROTATION_90 || rotation == Surface.ROTATION_270) {
+      previewRectF.offset(centerX - previewRectF.centerX(), centerY - previewRectF.centerY())
+      matrix.setRectToRect(textureRectF, previewRectF, Matrix.ScaleToFit.FILL)
+      val scale = Math.max(width.toFloat() / previewSize.width, height.toFloat() / previewSize.height)
+      matrix.postScale(scale, scale, centerX, centerY)
+      matrix.postRotate((90 * (rotation - 2)).toFloat(), centerX, centerY)
+    }
+    textureView.setTransform(matrix)
   }
 
   override fun observeCameraEvents() = cameraControllerEventsPublisher
@@ -280,6 +305,15 @@ class CameraControllerImpl(
     )
   }
 
+  private fun setTextureAspectRatio(cameraParams: CameraParams) {
+    // We fit the aspect ratio of TextureView to the size of preview we picked.
+    // looks like the dimensions we get from camera characteristics are for Landscape layout, so we swap it for portrait
+    if (orientation == Configuration.ORIENTATION_LANDSCAPE)
+      textureView.setAspectRatio(cameraParams.previewSize.width, cameraParams.previewSize.height)
+    else
+      textureView.setAspectRatio(cameraParams.previewSize.height, cameraParams.previewSize.width)
+  }
+
   private fun getCameraParams(cameraId: String): CameraParams {
     val characteristics = cameraManager.getCameraCharacteristics(cameraId)
     val previewSize = GISCameraHelper.getPreviewSize(characteristics)
@@ -345,8 +379,9 @@ class CameraControllerImpl(
 
   @Throws(CameraAccessException::class)
   internal fun createPreviewBuilder(captureSession: CameraCaptureSession, previewSurface: Surface): CaptureRequest.Builder {
-    val builder = captureSession.device.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
-    builder.addTarget(previewSurface)
+    val builder = captureSession.device.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
+      addTarget(previewSurface)
+    }
     setup3Auto(builder)
     return builder
   }
@@ -385,13 +420,6 @@ class CameraControllerImpl(
       // Allow AWB to run auto-magically if this device supports this
       builder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_AUTO)
     }
-  }
-
-  private fun setTextureAspectRatio(cameraParams: CameraParams) {
-    if (orientation == Configuration.ORIENTATION_LANDSCAPE)
-      textureView.setAspectRatio(cameraParams.previewSize.width, cameraParams.previewSize.height)
-    else
-      textureView.setAspectRatio(cameraParams.previewSize.height, cameraParams.previewSize.width)
   }
 
   private fun closeImageReader() {
