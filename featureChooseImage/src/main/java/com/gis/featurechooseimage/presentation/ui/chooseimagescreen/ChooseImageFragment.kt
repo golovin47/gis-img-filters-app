@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit
 
 class ChooseImageFragment : Fragment(), BaseView<ChooseImageState> {
 
-  private val CAMERA_PHOTO_REQUEST = 0x099
   private val GALLERY_PHOTO_REQUEST = 0x098
   private val CAMERA_PERMISSIONS_REQUEST = 0x097
   private val GALLERY_PERMISSIONS_REQUEST = 0x096
@@ -41,7 +40,6 @@ class ChooseImageFragment : Fragment(), BaseView<ChooseImageState> {
 
   private val imageEventsPublisher = PublishSubject.create<ChooseImageIntent>()
   private lateinit var viewSubscriptions: Disposable
-  private lateinit var currentState: ChooseImageState
   private var binding: FragmentChooseImageBinding? = null
 
   private val vmChooseImage: ChooseImageViewModel by viewModel()
@@ -67,10 +65,6 @@ class ChooseImageFragment : Fragment(), BaseView<ChooseImageState> {
 
   override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
     when (requestCode) {
-      CAMERA_PHOTO_REQUEST ->
-        if (resultCode == Activity.RESULT_OK) processCameraPhoto()
-        else photoCancelled()
-
       GALLERY_PHOTO_REQUEST ->
         if (resultCode == Activity.RESULT_OK) processGalleryPhoto(data!!.data!!)
         else photoCancelled()
@@ -78,11 +72,19 @@ class ChooseImageFragment : Fragment(), BaseView<ChooseImageState> {
   }
 
   override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-    if (requestCode == CAMERA_PERMISSIONS_REQUEST || requestCode == GALLERY_PERMISSIONS_REQUEST)
+    if (requestCode == CAMERA_PERMISSIONS_REQUEST)
+      if (grantResults.size == 3)
+        if (grantResults[0] == PackageManager.PERMISSION_GRANTED &&
+          grantResults[1] == PackageManager.PERMISSION_GRANTED &&
+          grantResults[2] == PackageManager.PERMISSION_GRANTED)
+          imageEventsPublisher.onNext(OpenCamera)
+        else imageEventsPublisher.onNext(ShowExtraPermissionsDialog)
+
+    if (requestCode == GALLERY_PERMISSIONS_REQUEST)
       if (grantResults.size == 2)
         if (grantResults[0] == PackageManager.PERMISSION_GRANTED &&
           grantResults[1] == PackageManager.PERMISSION_GRANTED)
-          imageEventsPublisher.onNext(if (requestCode == CAMERA_PERMISSIONS_REQUEST) OpenCamera else OpenGallery)
+          imageEventsPublisher.onNext(OpenGallery)
         else imageEventsPublisher.onNext(ShowExtraPermissionsDialog)
   }
 
@@ -111,14 +113,14 @@ class ChooseImageFragment : Fragment(), BaseView<ChooseImageState> {
       RxView.clicks(binding!!.btnCamera)
         .throttleFirst(500, TimeUnit.MILLISECONDS)
         .map {
-          if (permissionsGranted()) OpenCamera
+          if (cameraPermissionsGranted()) OpenCamera
           else RequestPermissionsForCamera
         },
 
       RxView.clicks(binding!!.btnGallery)
         .throttleFirst(500, TimeUnit.MILLISECONDS)
         .map {
-          if (permissionsGranted()) OpenGallery
+          if (galleryPermissionsGranted()) OpenGallery
           else RequestPermissionsForGallery
         },
 
@@ -140,17 +142,6 @@ class ChooseImageFragment : Fragment(), BaseView<ChooseImageState> {
     permissionAlertDialog.dismiss()
   }
 
-  private fun openCamera(uri: Uri) {
-    val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
-      putExtra(MediaStore.EXTRA_OUTPUT, uri)
-    }
-    startActivityForResult(intent, CAMERA_PHOTO_REQUEST)
-  }
-
-  private fun processCameraPhoto() {
-    imageEventsPublisher.onNext(CameraImageChosen(currentState.imagePath))
-  }
-
   private fun openGallery() {
     startActivityForResult(Intent(Intent.ACTION_PICK).apply { type = "image/*" }, GALLERY_PHOTO_REQUEST)
   }
@@ -159,17 +150,37 @@ class ChooseImageFragment : Fragment(), BaseView<ChooseImageState> {
     imageEventsPublisher.onNext(GalleryImageChosen(uri))
   }
 
-  private fun permissionsGranted(): Boolean {
+  private fun cameraPermissionsGranted(): Boolean {
+    return (ContextCompat.checkSelfPermission(context!!, Manifest.permission.CAMERA)
+      == PackageManager.PERMISSION_GRANTED) &&
+      (ContextCompat.checkSelfPermission(context!!, Manifest.permission.READ_EXTERNAL_STORAGE)
+        == PackageManager.PERMISSION_GRANTED) &&
+      (ContextCompat.checkSelfPermission(context!!, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        == PackageManager.PERMISSION_GRANTED)
+  }
+
+  private fun galleryPermissionsGranted(): Boolean {
     return (ContextCompat.checkSelfPermission(context!!, Manifest.permission.READ_EXTERNAL_STORAGE)
       == PackageManager.PERMISSION_GRANTED) &&
       (ContextCompat.checkSelfPermission(context!!, Manifest.permission.WRITE_EXTERNAL_STORAGE)
         == PackageManager.PERMISSION_GRANTED)
   }
 
-  private fun requestPermissions(requestCode: Int) {
+  private fun requestCameraPermissions() {
     requestPermissions(
-      arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE),
-      requestCode)
+      arrayOf(
+        Manifest.permission.CAMERA,
+        Manifest.permission.READ_EXTERNAL_STORAGE,
+        Manifest.permission.WRITE_EXTERNAL_STORAGE),
+      CAMERA_PERMISSIONS_REQUEST)
+  }
+
+  private fun requestGalleryPermissions() {
+    requestPermissions(
+      arrayOf(
+        Manifest.permission.READ_EXTERNAL_STORAGE,
+        Manifest.permission.WRITE_EXTERNAL_STORAGE),
+      GALLERY_PERMISSIONS_REQUEST)
   }
 
   private fun goToAppSettings() {
@@ -183,14 +194,10 @@ class ChooseImageFragment : Fragment(), BaseView<ChooseImageState> {
   }
 
   override fun render(state: ChooseImageState) {
-    currentState = state
-
-    if (state.openCamera) openCamera(state.uriForPhoto!!)
-
     if (state.openGallery) openGallery()
 
-    if (state.requestPermissionsForCamera) requestPermissions(CAMERA_PERMISSIONS_REQUEST)
-    if (state.requestPermissionsForGallery) requestPermissions(GALLERY_PERMISSIONS_REQUEST)
+    if (state.requestPermissionsForCamera) requestCameraPermissions()
+    if (state.requestPermissionsForGallery) requestGalleryPermissions()
 
     if (state.showExtraPermissionsDialog) showExtraPermissionDialog()
     else dismissExtraPermissionsDialog()

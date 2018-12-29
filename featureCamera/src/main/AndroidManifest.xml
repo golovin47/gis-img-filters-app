@@ -5,6 +5,4 @@
     android:name="android.hardware.camera2.full"
     android:required="true" />
 
-  <uses-permission android:name="android.permission.CAMERA" />
-
 </manifest>

@@ -1,7 +1,8 @@
 package com.gis.featurechooseimage.presentation.ui.chooseimagescreen
 
 import android.net.Uri
-import com.gis.featurechooseimage.presentation.ui.chooseimagescreen.ChooseImageIntent.*
+import com.gis.featurechooseimage.presentation.ui.chooseimagescreen.ChooseImageIntent.GalleryImageChosen
+import com.gis.featurechooseimage.presentation.ui.chooseimagescreen.ChooseImageIntent.ImageCancelled
 import com.gis.featurechooseimage.presentation.ui.chooseimagescreen.ChooseImageStateChange.*
 import com.gis.utils.BaseViewModel
 import com.gis.utils.domain.entity.FileUriAndPath
@@ -25,9 +26,6 @@ class ChooseImageViewModel(
           getUriAndFilePath!!.invoke()
             .doOnNext { goToCamera!!.invoke() }
             .map { Idle }
-//            .flatMap { fileUriAndPath ->
-//              Observable.just(ChooseImageStateChange.OpenCamera(fileUriAndPath.uri, fileUriAndPath.path), Idle)
-//            }
             .cast(ChooseImageStateChange::class.java)
             .onErrorResumeNext { e: Throwable -> handleError(e) }
             .subscribeOn(Schedulers.io())
@@ -55,10 +53,6 @@ class ChooseImageViewModel(
       intentStream.ofType(ImageCancelled::class.java)
         .map { Idle },
 
-      intentStream.ofType(CameraImageChosen::class.java)
-        .doOnNext { event -> goToApplyFilter?.invoke(event.imagePath) }
-        .map { Idle },
-
       intentStream.ofType(GalleryImageChosen::class.java)
         .switchMap { event ->
           getPathFromUri!!.invoke(event.uri)
@@ -77,18 +71,12 @@ class ChooseImageViewModel(
   override fun reduceState(previousState: ChooseImageState, stateChange: Any): ChooseImageState =
     when (stateChange) {
       is Idle -> previousState.copy(
-        openCamera = false,
         openGallery = false,
         requestPermissionsForCamera = false,
         requestPermissionsForGallery = false,
         showExtraPermissionsDialog = false,
         goToAppSettings = false,
         error = null)
-
-      is ChooseImageStateChange.OpenCamera -> previousState.copy(
-        openCamera = true,
-        uriForPhoto = stateChange.uri,
-        imagePath = stateChange.path)
 
       is ChooseImageStateChange.OpenGallery -> previousState.copy(openGallery = true)
 
