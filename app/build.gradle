@@ -29,6 +29,7 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation project(':featureApplyFilter')
     implementation project(':featureChooseImage')
+    implementation project(':featureCamera')
     implementation project(':navigation')
     implementation project(':utils')
 

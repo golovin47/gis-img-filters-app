@@ -1,1 +1,1 @@
-include ':app', ':navigation', ':utils', ':featureChooseImage', ':featureApplyFilter'
+include ':app', ':navigation', ':utils', ':featureChooseImage', ':featureApplyFilter', ':featureCamera'

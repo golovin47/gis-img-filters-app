@@ -13,7 +13,11 @@ val navigationModule = module {
     }
   }
 
-  factory("goToChooseImageFromApplyFilterScreen") {
-    { get<AppNavigator>().goToChooseImageFromApplyFilterScreen() }
+  factory(name = "goToCameraFromChooseImageScreen") {
+    { get<AppNavigator>().goToCameraFromChooseImageScreen() }
+  }
+
+  factory("goBack") {
+    { get<AppNavigator>().goBack() }
   }
 }

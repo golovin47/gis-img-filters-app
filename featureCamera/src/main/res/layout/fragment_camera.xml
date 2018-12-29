@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto">
+
+  <androidx.constraintlayout.motion.widget.MotionLayout
+    android:id="@+id/cameraRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.gis.featurecamera.presentation.ui.customview.AutoFitTextureView
+      android:id="@+id/textureView"
+      android:layout_width="0dp"
+      android:layout_height="0dp"
+      app:layout_constraintBottom_toBottomOf="parent"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageButton
+      android:id="@+id/btnTakePhoto"
+      android:layout_width="@dimen/medium_btn_size"
+      android:layout_height="@dimen/medium_btn_size"
+      android:background="@drawable/shape_round_rect"
+      android:src="@drawable/icon_take_photo"
+      app:layout_constraintBottom_toBottomOf="parent"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toTopOf="parent"
+      app:layout_constraintVertical_bias="0.95" />
+
+    <ImageButton
+      android:id="@+id/btnSwitchCamera"
+      android:layout_width="@dimen/small_btn_size"
+      android:layout_height="@dimen/small_btn_size"
+      android:background="@drawable/shape_round_rect"
+      android:src="@drawable/icon_switch_camera"
+      app:layout_constraintBottom_toBottomOf="parent"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintHorizontal_bias="0.95"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toTopOf="parent"
+      app:layout_constraintVertical_bias="0.05" />
+
+  </androidx.constraintlayout.motion.widget.MotionLayout>
+
+</layout>

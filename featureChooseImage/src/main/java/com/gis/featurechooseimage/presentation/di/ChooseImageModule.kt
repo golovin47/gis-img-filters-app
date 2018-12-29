@@ -9,6 +9,7 @@ val chooseImageModule = module {
     ChooseImageViewModel(
       get("getPathFromUri"),
       get("getUriAndFilePath"),
+      get("goToCameraFromChooseImageScreen"),
       get("fromChooseImageToApplyFilterScreen"))
   }
 }

@@ -1,26 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/app_nav_graph"
-    app:startDestination="@id/chooseImageFragment">
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:id="@+id/app_nav_graph"
+  app:startDestination="@id/chooseImageFragment">
 
   <fragment
-      android:id="@+id/chooseImageFragment"
-      android:name="com.gis.featurechooseimage.presentation.ui.chooseimagescreen.ChooseImageFragment"
-      android:label="ChooseImageFragment"
-      tools:layout="@layout/fragment_choose_image">
+    android:id="@+id/chooseImageFragment"
+    android:name="com.gis.featurechooseimage.presentation.ui.chooseimagescreen.ChooseImageFragment"
+    android:label="ChooseImageFragment"
+    tools:layout="@layout/fragment_choose_image">
 
     <action
-        android:id="@+id/fromChooseImageToApplyFilter"
-        app:destination="@id/applyFilterFragment" />
+      android:id="@+id/fromChooseImageToCamera"
+      app:destination="@id/cameraFragment" />
+
+    <action
+      android:id="@+id/fromChooseImageToApplyFilter"
+      app:destination="@id/applyFilterFragment" />
 
   </fragment>
 
   <fragment
-      android:id="@+id/applyFilterFragment"
-      android:name="com.gis.featureapplyfilter.presentation.ui.applyfilterscreen.ApplyFilterFragment"
-      android:label="ApplyFilterFragment"
-      tools:layout="@layout/fragment_apply_filter" />
+    android:id="@+id/applyFilterFragment"
+    android:name="com.gis.featureapplyfilter.presentation.ui.applyfilterscreen.ApplyFilterFragment"
+    android:label="ApplyFilterFragment"
+    tools:layout="@layout/fragment_apply_filter" />
+
+  <fragment
+    android:id="@+id/cameraFragment"
+    android:name="com.gis.featurecamera.presentation.ui.camerascreen.CameraFragment"
+    android:label="CameraFragment"
+    tools:layout="@layout/fragment_camera" />
 
 </navigation>

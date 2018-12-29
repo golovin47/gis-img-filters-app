@@ -12,6 +12,7 @@ import io.reactivex.schedulers.Schedulers
 class ChooseImageViewModel(
   private var getPathFromUri: ((Uri) -> Observable<String>)?,
   private var getUriAndFilePath: (() -> Observable<FileUriAndPath>)?,
+  private var goToCamera: (() -> Unit)?,
   private var goToApplyFilter: ((String) -> Unit)?) : BaseViewModel<ChooseImageState>() {
 
   override fun initState(): ChooseImageState = ChooseImageState()
@@ -22,9 +23,11 @@ class ChooseImageViewModel(
       intentStream.ofType(ChooseImageIntent.OpenCamera::class.java)
         .switchMap { event ->
           getUriAndFilePath!!.invoke()
-            .flatMap { fileUriAndPath ->
-              Observable.just(ChooseImageStateChange.OpenCamera(fileUriAndPath.uri, fileUriAndPath.path), Idle)
-            }
+            .doOnNext { goToCamera!!.invoke() }
+            .map { Idle }
+//            .flatMap { fileUriAndPath ->
+//              Observable.just(ChooseImageStateChange.OpenCamera(fileUriAndPath.uri, fileUriAndPath.path), Idle)
+//            }
             .cast(ChooseImageStateChange::class.java)
             .onErrorResumeNext { e: Throwable -> handleError(e) }
             .subscribeOn(Schedulers.io())
@@ -116,6 +119,7 @@ class ChooseImageViewModel(
     }
 
   override fun onCleared() {
+    goToCamera = null
     goToApplyFilter = null
     getPathFromUri = null
     getUriAndFilePath = null

@@ -1,0 +1,5 @@
+<resources>
+  <string name="app_name">featureCamera</string>
+
+  <string name="unknown_exception">Unknown camera error</string>
+</resources>

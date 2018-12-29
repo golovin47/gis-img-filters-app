@@ -24,6 +24,8 @@ val utilsModule = module {
 
   factory("createTempFileForPhotoAndGetUri") { { createTempFileForPhotoAndGetUri(androidApplication()) } }
 
+  factory("createTempFileForPhoto") { { createTempFileForPhoto(androidApplication()) } }
+
   factory("getUriAndFilePath") { { getUriAndFilePath(androidApplication()) } }
 
   factory("saveImageToStorage") { { bitmap: Bitmap -> saveImageToStorage(bitmap, androidApplication()) } }

@@ -12,6 +12,16 @@ class AppNavigator {
     this.navController = navController
   }
 
+  fun goToCameraFromChooseImageScreen(){
+    val navOptions = NavOptions.Builder()
+      .setEnterAnim(R.anim.anim_fade_in)
+      .setExitAnim(R.anim.anim_fade_out)
+      .setPopEnterAnim(R.anim.anim_fade_in)
+      .setPopExitAnim(R.anim.anim_fade_out)
+      .build()
+    navController.navigate(R.id.fromChooseImageToCamera, null, navOptions)
+  }
+
   fun goToApplyFilterFromChooseImageScreen(imagePath: String) {
     val args: Bundle = Bundle().apply {
       putString("imagePath", imagePath)
@@ -26,7 +36,7 @@ class AppNavigator {
     navController.navigate(R.id.fromChooseImageToApplyFilter, args, navOptions)
   }
 
-  fun goToChooseImageFromApplyFilterScreen() {
+  fun goBack() {
     navController.navigateUp()
   }
 }

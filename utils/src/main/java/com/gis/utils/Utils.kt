@@ -36,6 +36,15 @@ fun getPathFromUri(uri: Uri, context: Context): Observable<String> =
   }
 
 
+fun createTempFileForPhoto(context: Context): Observable<File> =
+  Observable.fromCallable {
+    val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+    val fileName = "PhotoFilterImg_" + timestamp + "_"
+    val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+    return@fromCallable File.createTempFile(fileName, ".jpg", storageDir)
+  }
+
+
 fun createTempFileForPhotoAndGetUri(context: Context): Observable<Uri> =
   Observable.fromCallable {
     val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())

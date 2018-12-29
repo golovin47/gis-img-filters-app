@@ -11,6 +11,7 @@
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/buildSrc" />
             <option value="$PROJECT_DIR$/featureApplyFilter" />
+            <option value="$PROJECT_DIR$/featureCamera" />
             <option value="$PROJECT_DIR$/featureChooseImage" />
             <option value="$PROJECT_DIR$/navigation" />
             <option value="$PROJECT_DIR$/utils" />
