@@ -9,7 +9,7 @@
     </style>
 
     <style name="StartTheme" parent="AppTheme">
-        <item name="android:windowBackground">@drawable/img_camera</item>
+        <item name="android:windowBackground">@drawable/img_camera_stretch</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
     </style>
 
