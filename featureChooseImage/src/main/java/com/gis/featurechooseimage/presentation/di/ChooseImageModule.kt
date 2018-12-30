@@ -10,6 +10,6 @@ val chooseImageModule = module {
       get("getPathFromUri"),
       get("getUriAndFilePath"),
       get("goToCameraFromChooseImageScreen"),
-      get("fromChooseImageToApplyFilterScreen"))
+      get("goToApplyFilterScreenFromChooseImage"))
   }
 }

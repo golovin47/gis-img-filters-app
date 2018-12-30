@@ -12,6 +12,7 @@ import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
+import java.util.concurrent.TimeUnit
 
 class ApplyFilterViewModel(
   private var bitmapFromImagePath: ((String) -> Observable<Bitmap>)?,
@@ -72,7 +73,10 @@ class ApplyFilterViewModel(
         .switchMap { event ->
           saveImageToStorage!!.invoke(event.bitmap)
             .andThen(
-              Observable.just(ImageSaved, Idle)
+              Observable.timer(100, TimeUnit.MILLISECONDS)
+                .map { Idle }
+                .cast(ApplyFilterStateChange::class.java)
+                .startWith(ImageSaved)
                 .doOnNext { if (it is Idle) goBack!!.invoke() })
             .onErrorResumeNext { e: Throwable -> handleError(e) }
             .subscribeOn(Schedulers.io())

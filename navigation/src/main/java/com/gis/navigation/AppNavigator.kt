@@ -47,7 +47,22 @@ class AppNavigator {
       .setPopEnterAnim(R.anim.anim_fade_in)
       .setPopExitAnim(R.anim.anim_fade_out)
       .build()
-    navController.navigate(R.id.fromChooseImageToApplyFilter, args, navOptions)
+    navController.navigate(R.id.fromCameraToTakenPhoto, args, navOptions)
+  }
+
+  fun goToApplyFilterFromTakenPictureScreen(imagePath: String) {
+    val args: Bundle = Bundle().apply {
+      putString("imagePath", imagePath)
+    }
+
+    val navOptions = NavOptions.Builder()
+      .setEnterAnim(R.anim.anim_fade_in)
+      .setExitAnim(R.anim.anim_fade_out)
+      .setPopEnterAnim(R.anim.anim_fade_in)
+      .setPopExitAnim(R.anim.anim_fade_out)
+      .setPopUpTo(R.id.cameraFragment, true)
+      .build()
+    navController.navigate(R.id.fromTakenPhotoToApplyFilter, args, navOptions)
   }
 
   fun goBack() {

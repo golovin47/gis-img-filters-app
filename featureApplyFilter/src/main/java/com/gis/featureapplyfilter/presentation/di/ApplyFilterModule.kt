@@ -9,6 +9,6 @@ val applyFilterModule = module {
     get("bitmapFromImagePath"),
     get("saveImageToStorage"),
     get("createTempImageFileAndGetUri"),
-    get("goToChooseImageFromApplyFilterScreen"),
+    get("goBack"),
     get(), get()) }
 }

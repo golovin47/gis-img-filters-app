@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto">
+
+  <androidx.constraintlayout.motion.widget.MotionLayout
+    android:id="@+id/takenPhotoRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:layoutDescription="@xml/taken_photo_motion_scene">
+
+    <ImageView
+      android:id="@+id/ivImg"
+      android:layout_width="0dp"
+      android:layout_height="0dp"
+      android:background="@android:color/black" />
+
+    <ImageView
+      android:id="@+id/ivDone"
+      android:layout_width="@dimen/medium_btn_size"
+      android:layout_height="@dimen/medium_btn_size"
+      android:background="@drawable/shape_circle"
+      android:padding="8dp"
+      android:src="@drawable/icon_done" />
+
+    <ImageView
+      android:id="@+id/ivCancel"
+      android:layout_width="@dimen/small_btn_size"
+      android:layout_height="@dimen/small_btn_size"
+      android:background="@drawable/shape_circle"
+      android:padding="8dp"
+      android:src="@drawable/icon_cancel" />
+
+  </androidx.constraintlayout.motion.widget.MotionLayout>
+
+</layout>

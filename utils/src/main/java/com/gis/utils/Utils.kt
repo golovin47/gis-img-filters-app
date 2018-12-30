@@ -3,6 +3,8 @@ package com.gis.utils
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
@@ -15,9 +17,25 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
+
 fun bitmapFromFilePath(path: String): Observable<Bitmap> =
   Observable.fromCallable {
-    BitmapFactory.decodeFile(path, BitmapFactory.Options().apply { inMutable = true })
+    var rotate = 0
+    val imageFile = File(path)
+    val exif = ExifInterface(imageFile.absolutePath)
+    val orientation = exif.getAttributeInt(
+      ExifInterface.TAG_ORIENTATION,
+      ExifInterface.ORIENTATION_NORMAL)
+
+    when (orientation) {
+      ExifInterface.ORIENTATION_ROTATE_270 -> rotate = 270
+      ExifInterface.ORIENTATION_ROTATE_180 -> rotate = 180
+      ExifInterface.ORIENTATION_ROTATE_90 -> rotate = 90
+    }
+    val matrix = Matrix();
+    matrix.postRotate(rotate.toFloat())
+    val scaled = BitmapFactory.decodeFile(path, BitmapFactory.Options().apply { inMutable = true })
+    return@fromCallable Bitmap.createBitmap(scaled, 0, 0, scaled.width, scaled.height, matrix, true)
   }
 
 

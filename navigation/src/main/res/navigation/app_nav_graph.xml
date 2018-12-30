@@ -31,6 +31,24 @@
     android:id="@+id/cameraFragment"
     android:name="com.gis.featurecamera.presentation.ui.camerascreen.CameraFragment"
     android:label="CameraFragment"
-    tools:layout="@layout/fragment_camera" />
+    tools:layout="@layout/fragment_camera">
+
+    <action
+      android:id="@+id/fromCameraToTakenPhoto"
+      app:destination="@id/takenPhotoFragment" />
+
+  </fragment>
+
+  <fragment
+    android:id="@+id/takenPhotoFragment"
+    android:name="com.gis.featurecamera.presentation.ui.takenphotoscreen.TakenPhotoFragment"
+    android:label="TakenPhotoFragment"
+    tools:layout="@layout/fragment_taken_photo">
+
+    <action
+      android:id="@+id/fromTakenPhotoToApplyFilter"
+      app:destination="@id/applyFilterFragment" />
+
+  </fragment>
 
 </navigation>

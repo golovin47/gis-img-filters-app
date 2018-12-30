@@ -7,7 +7,7 @@ val navigationModule = module {
 
   single(createOnStart = true) { AppNavigator() }
 
-  factory(name = "fromChooseImageToApplyFilterScreen") {
+  factory(name = "goToApplyFilterScreenFromChooseImage") {
     { imagePath: String ->
       get<AppNavigator>().goToApplyFilterFromChooseImageScreen(imagePath)
     }
@@ -20,6 +20,12 @@ val navigationModule = module {
   factory(name = "goToTakenPhotoFromCameraScreen") {
     { imagePath: String ->
       get<AppNavigator>().goToTakenPhotoFromCameraScreen(imagePath)
+    }
+  }
+
+  factory(name = "goToApplyFilterScreenFromTakenPhoto") {
+    { imagePath: String ->
+      get<AppNavigator>().goToApplyFilterFromTakenPictureScreen(imagePath)
     }
   }
 

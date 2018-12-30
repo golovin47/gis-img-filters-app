@@ -7,6 +7,7 @@ import com.gis.featurecamera.domain.interactors.PrepareCameraControllerUseCase
 import com.gis.featurecamera.domain.interactors.SwitchCameraUseCase
 import com.gis.featurecamera.domain.interactors.TakePhotoUseCase
 import com.gis.featurecamera.presentation.ui.camerascreen.CameraViewModel
+import com.gis.featurecamera.presentation.ui.takenphotoscreen.TakenPhotoViewModel
 import org.koin.android.ext.koin.androidApplication
 import org.koin.androidx.viewmodel.ext.koin.viewModel
 import org.koin.dsl.module.module
@@ -26,5 +27,12 @@ val cameraModule = module {
       get("goBack"),
       get("goToTakenPhotoFromCameraScreen"),
       get(), get(), get(), get())
+  }
+
+  viewModel {
+    TakenPhotoViewModel(
+      get("goBack"),
+      get("goToApplyFilterScreenFromTakenPhoto")
+    )
   }
 }
